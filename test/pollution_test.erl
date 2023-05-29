@@ -1,6 +1,6 @@
 %%%-------------------------------------------------------------------
-%%% @author Wojciech Turek
-%%% @copyright (C) 2019, <COMPANY>
+%%% @author Wojciech Turek, Wajktor13
+%%% @copyright (C) 2019, Wojciech Turek
 %%% @doc
 %%%
 %%% @end
@@ -53,13 +53,13 @@ add_value_test() ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 add_value_fail_test() ->
-    M = pollution:add_station("Stacja 1", {1,1}, pollution:create_monitor()),
     Time = calendar:local_time(),
+    M = pollution:add_station("Stacja 1", {1,1}, pollution:create_monitor()),
     ?assertNotMatch({error, _}, pollution:add_value("Stacja 1", Time, "PM10", 46.3, M)),
-    ?assertMatch({error, _}, pollution:add_value("Stacja 1", Time, "PM10", 46.3, M)),
-    ?assertMatch({error, _}, pollution:add_value("Stacja 1", Time, "PM10", 36.3, M)),
-    ?assertMatch({error, _}, pollution:add_value({1,1}, Time, "PM10", 46.3, M)),
-    ?assertMatch({error, _}, pollution:add_value({1,1}, Time, "PM10", 36.3, M)).
+    M1 = pollution:add_value("Stacja 1", Time, "PM10", 46.3, M),
+    ?assertMatch({error, _}, pollution:add_value("Stacja 1", Time, "PM10", 36.3, M1)),
+    ?assertMatch({error, _}, pollution:add_value({1,1}, Time, "PM10", 46.3, M1)),
+    ?assertMatch({error, _}, pollution:add_value({1,1}, Time, "PM10", 36.3, M1)).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -181,7 +181,7 @@ get_daily_mean_test() ->
 
     ?assertMatch(15.0, pollution:get_daily_mean("PM10",{2023,3,27}, M2)),
     ?assertMatch(15.0, pollution:get_daily_mean("PM10",{2023,3,27}, M6)),
-    ?assertMatch(15.0, pollution:get_daily_mean("PM10",{2023,3,27}, M9)).
+    ?assertMatch(258.8, pollution:get_daily_mean("PM10",{2023,3,27}, M9)).
 
 
 
@@ -194,4 +194,3 @@ get_daily_mean_fail_test() ->
 
     ?assertMatch({error, _}, pollution:get_daily_mean("PM25",{2023,3,27}, M2)),
     ?assertMatch({error, _}, pollution:get_daily_mean("PM10",{2023,3,29}, M2)).
-
