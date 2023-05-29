@@ -122,8 +122,8 @@ add_station(Name, Coordinates, Monitor) ->
     end.
 
 
-add_value(Key, DateTime, Type, Value, Monitor) ->
-    case get_station_by_name_or_coords(Monitor, Key, Key) of
+add_value(StationKey, DateTime, Type, Value, Monitor) ->
+    case get_station_by_name_or_coords(Monitor, StationKey, StationKey) of
         false ->
             io:format("Cannot add new measurement. Station with such coordinates or name does not exists.~n"),
             {error, station_does_not_exist};
@@ -149,8 +149,8 @@ add_value(Key, DateTime, Type, Value, Monitor) ->
     end.
 
 
-remove_value(Key, DateTime, Type, Monitor) ->
-    case get_station_by_name_or_coords(Monitor, Key, Key) of
+remove_value(StationKey, DateTime, Type, Monitor) ->
+    case get_station_by_name_or_coords(Monitor, StationKey, StationKey) of
         false ->
             io:format("Cannot remove measurement. Station with such coordinates or name does not exists.~n"),
             {error, station_does_not_exist};
@@ -170,8 +170,8 @@ remove_value(Key, DateTime, Type, Monitor) ->
     end.
 
 
-get_one_value(Key, DateTime, Type, Monitor) ->
-    case get_station_by_name_or_coords(Monitor, Key, Key) of
+get_one_value(StationKey, DateTime, Type, Monitor) ->
+    case get_station_by_name_or_coords(Monitor, StationKey, StationKey) of
         false ->
             io:format("Cannot get measurement value. Station with such coordinates or name does not exists.~n"),
             {error, station_does_not_exist};
@@ -191,8 +191,8 @@ get_one_value(Key, DateTime, Type, Monitor) ->
     end.
 
 
-get_station_mean(Key, Type, Monitor) ->
-    case get_station_by_name_or_coords(Monitor, Key, Key) of
+get_station_mean(StationKey, Type, Monitor) ->
+    case get_station_by_name_or_coords(Monitor, StationKey, StationKey) of
         false ->
             io:format("Cannot get station mean. Station with such coordinates or name does not exists.~n"),
             {error, station_does_not_exist};
@@ -219,4 +219,3 @@ get_daily_over_limit(Date, Type, Limit, [S | T]) ->
         true -> 1 + get_daily_over_limit(Date, Type, Limit, T);
         false -> get_daily_over_limit(Date, Type, Limit, T)
     end.
-
