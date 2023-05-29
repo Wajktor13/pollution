@@ -31,6 +31,12 @@ init(InitialValue) ->
             restart => permanent,
             shutdown => 2000,
             type => worker,
-            modules => [pollution_gen_server, pollution]}
+            modules => [pollution_gen_server, pollution]},
+        #{id => 'pollution_value_collector',
+            start => {pollution_value_collector_gen_statem, start_link, []},
+            restart => permanent,
+            shutdown => 2000,
+            type => worker,
+            modules => [pollution_value_collector_gen_statem, pollution_gen_server, pollution]}
     ],
     {ok, {SupFlags, ChildSpecs}}.

@@ -9,9 +9,8 @@
 -module(pollution).
 -author("Wiktor").
 
-%% API
 -export([create_monitor/0, add_station/3, add_value/5, remove_value/4, get_one_value/4, get_station_mean/3,
-    get_daily_mean/3, station_exceeded_limit_on_date/4, get_daily_over_limit/4]).
+    get_daily_mean/3, station_exceeded_limit_on_date/4, get_daily_over_limit/4, station_exists/3]).
 
 -record(station, {name, coordinates, measurements}).
 
@@ -26,13 +25,6 @@ get_station_by_name_or_coords([H | T], Name, Coordinates) ->
     if
         (H#station.name == Name) or (H#station.coordinates == Coordinates) -> H;
         true -> get_station_by_name_or_coords(T, Name, Coordinates)
-    end.
-
-
-station_exists(Monitor, Name, Coordinates) ->
-    case get_station_by_name_or_coords(Monitor, Name, Coordinates) of
-        false -> false;
-        _     -> true
     end.
 
 
@@ -72,7 +64,7 @@ remove_measurement_on_datetime(Station, DateTime, Type, MeasurementsOnDateTime, 
 
 
 get_mean_of_list([]) ->
-    io:format("Cannot get mean of empty list.~n"),
+    io:format("[pollution] cannot get mean of empty list.~n"),
     {error, mean_of_empty_list};
 get_mean_of_list(A) ->
     lists:sum(A) / length(A).
@@ -102,7 +94,7 @@ get_all_measurements_from_station_of_type(Station, Type) ->
     lists:filter(fun ([{T, _}]) -> T == Type end, AllMeasurementsOfStation).
 
 
-%% end of helpers
+%% API
 
 create_monitor() -> [].
 
@@ -110,13 +102,13 @@ create_monitor() -> [].
 add_station(Name, Coordinates, Monitor) ->
     case station_exists(Monitor, Name, Coordinates) of
         true ->
-            io:format("Cannot add new station. Station with such coordinates or name already exists.~n"),
+            io:format("[pollution] cannot add new station. Station with such coordinates or name already exists.~n"),
             {error, station_already_exists};
         false ->
             case validate_coordinates(Coordinates) of
                 true -> [#station{name = Name, coordinates = Coordinates, measurements = maps:new()} | Monitor];
                 false ->
-                    io:format("Cannot add new station. Coordinates are incorrect.~n"),
+                    io:format("[pollution] cannot add new station. Coordinates are incorrect.~n"),
                     {error, incorrect_coordinates}
             end
     end.
@@ -125,7 +117,7 @@ add_station(Name, Coordinates, Monitor) ->
 add_value(StationKey, DateTime, Type, Value, Monitor) ->
     case get_station_by_name_or_coords(Monitor, StationKey, StationKey) of
         false ->
-            io:format("Cannot add new measurement. Station with such coordinates or name does not exists.~n"),
+            io:format("[pollution] cannot add new measurement. Station with such coordinates or name does not exists.~n"),
             {error, station_does_not_exist};
         Station ->
             case validate_new_measurement(DateTime, Type, Value) of
@@ -137,12 +129,12 @@ add_value(StationKey, DateTime, Type, Value, Monitor) ->
                                 false -> add_measurement_on_datetime(Station, DateTime, Type, Value, Monitor,
                                     MeasurementsOnDateTime);
                                 true ->
-                                    io:format("Cannot add new measurement. Measurement with the same date and type already exists.~n"),
+                                    io:format("[pollution] cannot add new measurement. Measurement with the same date and type already exists.~n"),
                                     {error, measurement_already_exists}
                             end
                     end;
                 false ->
-                    io:format("Cannot add new measurement. Measurement data is incorrect.~n"),
+                    io:format("[pollution] cannot add new measurement. Measurement data is incorrect.~n"),
                     {error, measurement_data_incorrect}
             end
 
@@ -152,17 +144,17 @@ add_value(StationKey, DateTime, Type, Value, Monitor) ->
 remove_value(StationKey, DateTime, Type, Monitor) ->
     case get_station_by_name_or_coords(Monitor, StationKey, StationKey) of
         false ->
-            io:format("Cannot remove measurement. Station with such coordinates or name does not exists.~n"),
+            io:format("[pollution] cannot remove measurement. Station with such coordinates or name does not exists.~n"),
             {error, station_does_not_exist};
         Station ->
             case get_single_station_measurements_on_datetime(Station, DateTime) of
                 false ->
-                    io:format("Cannot remove measurement. There are no measurements made on provided time.~n"),
+                    io:format("[pollution] cannot remove measurement. There are no measurements made on provided time.~n"),
                     {error, measurement_does_not_exist};
                 MeasurementsOnDateTime ->
                     case measurement_exists(Type, MeasurementsOnDateTime) of
                         false ->
-                            io:format("Cannot remove measurement. Measurement of this type does not exist on provided station and time.~n"),
+                            io:format("[pollution] cannot remove measurement. Measurement of this type does not exist on provided station and time.~n"),
                             {error, measurement_does_not_exist};
                         true -> remove_measurement_on_datetime(Station, DateTime, Type, MeasurementsOnDateTime, Monitor)
                     end
@@ -173,17 +165,17 @@ remove_value(StationKey, DateTime, Type, Monitor) ->
 get_one_value(StationKey, DateTime, Type, Monitor) ->
     case get_station_by_name_or_coords(Monitor, StationKey, StationKey) of
         false ->
-            io:format("Cannot get measurement value. Station with such coordinates or name does not exists.~n"),
+            io:format("[pollution] cannot get measurement value. Station with such coordinates or name does not exists.~n"),
             {error, station_does_not_exist};
         Station ->
             case get_single_station_measurements_on_datetime(Station, DateTime) of
                 false ->
-                    io:format("Cannot get measurement value. There are no measurements made on provided station and time.~n"),
+                    io:format("[pollution] cannot get measurement value. There are no measurements made on provided station and time.~n"),
                     {error, measurement_does_not_exist};
                 MeasurementsOnDateTime ->
                     case maps:find(Type, MeasurementsOnDateTime) of
                         error ->
-                            io:format("Cannot get measurement value. Measurement of this type does not exist on provided station and time.~n"),
+                            io:format("[pollution] cannot get measurement value. Measurement of this type does not exist on provided station and time.~n"),
                             {error, measurement_does_not_exist};
                         {ok, Value} -> Value
                     end
@@ -194,12 +186,12 @@ get_one_value(StationKey, DateTime, Type, Monitor) ->
 get_station_mean(StationKey, Type, Monitor) ->
     case get_station_by_name_or_coords(Monitor, StationKey, StationKey) of
         false ->
-            io:format("Cannot get station mean. Station with such coordinates or name does not exists.~n"),
+            io:format("[pollution] cannot get station mean. Station with such coordinates or name does not exists.~n"),
             {error, station_does_not_exist};
         Station ->
             case get_all_measurements_from_station_of_type(Station, Type) of
                 [] ->
-                    io:format("Cannot get station mean. Station with such coordinates or name has no measurements.~n"),
+                    io:format("[pollution] cannot get station mean. Station with such coordinates or name has no measurements.~n"),
                     {error, station_has_no_measurements};
                 _ -> get_mean_of_list([V || [{_, V}] <- get_all_measurements_from_station_of_type(Station, Type)])
             end
@@ -209,6 +201,13 @@ get_station_mean(StationKey, Type, Monitor) ->
 get_daily_mean(Type, Date, Monitor) ->
     get_mean_of_list([V || {T, V} <- [lists:nth(1, maps:to_list(Measurement)) ||
         {_, Measurement} <- get_measurements_on_date_of_type_all_stations(Monitor, Date)], T == Type]).
+
+
+station_exists(Monitor, Name, Coordinates) ->
+    case get_station_by_name_or_coords(Monitor, Name, Coordinates) of
+        false -> false;
+        _     -> true
+    end.
 
 
 %% individual task
