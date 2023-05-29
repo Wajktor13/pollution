@@ -18,7 +18,7 @@
 -export([start_link/1, init/1, handle_call/3, handle_cast/2]).
 
 -export([get_monitor/0, add_station/2, add_value/4, remove_value/3, get_one_value/3, get_station_mean/2,
-    get_daily_mean/2, get_daily_over_limit/3, crash/0]).
+    get_daily_mean/2, get_daily_over_limit/3, crash/0, stop/0, terminate/2]).
 
 
 start_link(InitialValue) ->
@@ -32,6 +32,9 @@ start_link(InitialValue) ->
 
 init(_) ->
     {ok, pollution:create_monitor()}.
+
+terminate(Reason, _) ->
+    io:format("pollution server has been shutdown. Reason: ~p~n", [Reason]).
 
 % API
 get_monitor() ->
@@ -60,6 +63,9 @@ get_daily_over_limit(Date, Type, Limit) ->
 
 crash() ->
     gen_server:cast(pollution_gen_server, {crash}).
+
+stop() ->
+    gen_server:cast(pollution_gen_server, stop).
 
 % call handlers
 handle_call({get_monitor}, _From, Monitor) ->
@@ -97,4 +103,7 @@ handle_cast({remove_value, StationKey, DateTime, Type}, Monitor) ->
     end;
 
 handle_cast({crash}, _) ->
-    exit(crash).
+    exit(crash);
+
+handle_cast(stop, Monitor) ->
+    {stop, normal, Monitor}.
