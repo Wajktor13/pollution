@@ -17,7 +17,7 @@
 
 %% helpers
 
-validate_coordinates({X, Y}) when is_integer(X) and is_integer(Y) -> true;
+validate_coordinates({X, Y}) when is_number(X) and is_number(Y) -> true;
 validate_coordinates(_) -> false.
 
 get_station_by_name_or_coords([], _, _) -> false;
@@ -54,7 +54,7 @@ measurement_exists(Type, MeasurementsOnDateTime) ->
 
 validate_new_measurement({{Y, M, D}, {H, MI, S}}, Type, Value) ->
     is_integer(Y) and is_integer(M) and is_integer(D) and is_integer(H) and is_integer(MI) and is_integer(S) and
-        ((Type == "PM1") or (Type == "PM10") or (Type == "PM25")) and is_number(Value).
+        (string:equal(Type, "PM1") or string:equal(Type, "PM10") or string:equal(Type, "PM25")) and is_number(Value).
 
 
 remove_measurement_on_datetime(Station, DateTime, Type, MeasurementsOnDateTime, Monitor) ->
@@ -70,7 +70,7 @@ get_mean_of_list(A) ->
     lists:sum(A) / length(A).
 
 
-get_measurements_on_date_of_type_all_stations(Monitor, Date) ->
+get_measurements_on_date_all_stations(Monitor, Date) ->
     AllMeasurements = [MeasurementsOnDate || Station <- Monitor,
         MeasurementsOnDate <- maps:to_list(Station#station.measurements)],
     lists:filter(fun ({{D, _}, _}) -> D == Date end, AllMeasurements).
@@ -84,14 +84,14 @@ get_measurements_on_date_single_station(Station, Date) ->
 station_exceeded_limit_on_date(Station, Date, Type, Limit) ->
     MeasurementsOnDate = [maps:to_list(Measurement) || {_, Measurement} <-
         get_measurements_on_date_single_station(Station, Date)],
-    MeasurementsOnDateOfType = lists:filter(fun ([{T, _}]) -> T == Type end, MeasurementsOnDate),
+    MeasurementsOnDateOfType = lists:filter(fun ([{T, _}]) -> string:equal(Type, T) end, MeasurementsOnDate),
     lists:foldl(fun (V, R) -> (V > Limit) or R end, false, [V || [{_, V}] <- MeasurementsOnDateOfType]).
 
 
 get_all_measurements_from_station_of_type(Station, Type) ->
     AllMeasurementsOfStation = [maps:to_list(AllMeasurements) || AllMeasurements
         <- maps:values(Station#station.measurements)],
-    lists:filter(fun ([{T, _}]) -> T == Type end, AllMeasurementsOfStation).
+    lists:filter(fun ([{T, _}]) -> string:equal(Type, T) end, AllMeasurementsOfStation).
 
 
 %% API
@@ -193,14 +193,14 @@ get_station_mean(StationKey, Type, Monitor) ->
                 [] ->
                     io:format("[pollution] cannot get station mean. Station with such coordinates or name has no measurements.~n"),
                     {error, station_has_no_measurements};
-                _ -> get_mean_of_list([V || [{_, V}] <- get_all_measurements_from_station_of_type(Station, Type)])
+                Measurements -> get_mean_of_list([V || [{_, V}] <- Measurements])
             end
     end.
 
 
 get_daily_mean(Type, Date, Monitor) ->
     get_mean_of_list([V || {T, V} <- [lists:nth(1, maps:to_list(Measurement)) ||
-        {_, Measurement} <- get_measurements_on_date_of_type_all_stations(Monitor, Date)], T == Type]).
+        {_, Measurement} <- get_measurements_on_date_all_stations(Monitor, Date)], string:equal(Type, T)]).
 
 
 station_exists(Monitor, Name, Coordinates) ->
