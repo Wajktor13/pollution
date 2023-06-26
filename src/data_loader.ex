@@ -39,12 +39,12 @@ end
 
 defmodule DataLoader do
     def load_data do
-        data_path = "C:/Users/Wiktor/Downloads/pollution.csv"
+        data_path = "../pollution.csv"
         data = File.read!(data_path) |> String.split("\n")
 
         parsed_data = Enum.map(data, fn line -> Parser.parse_line(line) end)
 
-        unique_stations_locations = StationsIdentifier.identifyStations(parsed_data)
+        unique_stations_locations = StationsIdentifier.identify_stations(parsed_data)
 
         Enum.map(unique_stations_locations, fn location ->
             :pollution_gen_server.add_station(NameGenerator.generate_name(location), location)
